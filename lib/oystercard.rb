@@ -12,4 +12,8 @@ class Oystercard
     raise error if (@balance + amount) > BALANCE_CAP
     @balance += amount
   end
+
+  def deduct(amount)
+    @balance -= amount
+  end
 end

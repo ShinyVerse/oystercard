@@ -23,6 +23,11 @@ describe Oystercard do
       message = "Unable to top up beyond #{Oystercard::BALANCE_CAP}. You currently have: £#{subject.balance}"
       expect{ subject.top_up(50) }.to raise_error(message)
     end
+
+    it 'allows you to deduct an amount' do
+      subject.deduct(10)
+      expect(subject.balance).to eq 40
+    end
   end
 
 end
