@@ -16,4 +16,13 @@ describe Oystercard do
 
   end
 
+  context 'When card has money on it' do
+    let(:subject) { Oystercard.new(50) }
+
+    it 'raises error if attempting to top_up beyond capped limit' do
+      message = "Unable to top up beyond #{Oystercard::BALANCE_CAP}. You currently have: £#{subject.balance}"
+      expect{ subject.top_up(50) }.to raise_error(message)
+    end
+  end
+
 end
