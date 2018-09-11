@@ -1,17 +1,18 @@
 require 'oystercard'
 
 describe Oystercard do
+  let(:station) { double :station }
 
   context 'When card is new' do
     let(:subject) { Oystercard.new }
 
-    it 'has balance as an instance variable' do
-      expect(subject::balance).to eq 0
-    end
-
     it 'tops up balance to passed amount' do
       subject.top_up(10)
       expect(subject::balance).to eq 10
+    end
+
+    it 'Raises an error when user has insufficient funds on card' do
+      expect { subject.touch_in(station) }.to raise_error "Insufficient funds"
     end
 
   end
@@ -24,10 +25,38 @@ describe Oystercard do
       expect{ subject.top_up(50) }.to raise_error(message)
     end
 
-    it 'allows you to deduct an amount' do
-      subject.deduct(10)
-      expect(subject.balance).to eq 40
+    xit 'changes @use_in to true when touch_in called' do
+      subject.touch_in(station)
+
+      expect(subject::entry_station).to eq station
     end
+
+    it 'changes balance when charge is made' do
+      subject.touch_in(station)
+
+      expect{ subject.touch_out }.to change{subject.balance}.by (-5)
+    end
+
+    it 'remembers the entry station' do
+      subject.touch_in(station)
+      expect(subject.entry_station).to eq(station)
+    end
+
+ end
+
+ context 'When card is in use' do
+   let(:subject) { Oystercard.new(50) }
+
+   before(:each) do
+      subject.touch_in(station)
+   end
+
+    it 'changes @use_in to false when touch_out is called' do
+      subject.touch_out
+
+      expect(subject::entry_station).to eq nil
+    end
+
   end
 
 end
