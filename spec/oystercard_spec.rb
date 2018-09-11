@@ -20,7 +20,11 @@ describe Oystercard do
 
   context 'When card has money on it' do
     let(:subject) { Oystercard.new(50) }
-    before(:each) { subject.touch_in(in_station) }
+    let(:journey) { Journey.new }
+    before(:each) do
+      subject.touch_in(in_station)
+      allow(journey).to receive(:calculate_fare).and_return 1
+    end
 
     it 'raises error if attempting to top_up beyond capped limit' do
       message = "Unable to top up beyond #{Oystercard::BALANCE_CAP}. You currently have: £#{subject.balance}"
@@ -34,16 +38,17 @@ describe Oystercard do
 
     it 'changes balance when charge is made' do
 
-      expect{ subject.touch_out(out_station) }.to change{subject.balance}.by (-5)
+      expect{ subject.touch_out(out_station) }.to change{subject.balance}.by (-1)
     end
 
     it 'remembers the entry station' do
       expect(subject.entry_station).to eq(in_station)
     end
 
-    it 'logs journey in @journey_log ' do
+    it 'logs journey in @card_history ' do
       subject.touch_out(out_station)
-      expect(subject.journey_log).to include(in_station => out_station)
+      fare = journey.calculate_fare
+      expect(subject.card_history).to include({'entry' => in_station, 'out' => out_station, 'price' => fare})
     end
  end
 
@@ -54,7 +59,7 @@ describe Oystercard do
       subject.touch_in(in_station)
    end
 
-    it 'changes @use_in to false when touch_out is called' do
+    it 'changes @entry_station to false when touch_out is called' do
       subject.touch_out(out_station)
 
       expect(subject::entry_station).to eq nil
