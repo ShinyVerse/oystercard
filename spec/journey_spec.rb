@@ -1,16 +1,19 @@
 require 'journey'
 
 describe Journey do
-  let(:in_station) { double :station }
-  let(:out_station) { double :station }
-  it 'calculates fare as 1 when both stations entered' do
-    journey = Journey.new(in_station,out_station )
-    expect(journey.calculate_fare).to eq 1
-  end
+  let(:journey) { described_class.new }
+  let(:entry_station) { double('a station', name: 'Aldgate East', zone: 1) }
+  let(:exit_station) { double('another station', name: 'Bow road', zone: 2)}
 
-  it 'calculates fare as 6 when a station value is nil' do
-    journey = Journey.new(in_station)
-    expect(journey.calculate_fare).to eq 6
-  end
+  context '#calculate_fare' do
+    it 'FAIL - penalty cost given' do
 
+      expect(journey.calculate_fare(entry_station, nil)).to eq 6
+    end
+
+    it 'PASS - normal fare' do
+
+      expect(journey.calculate_fare(exit_station.zone, entry_station.zone)).to eq 2
+    end
+  end
 end

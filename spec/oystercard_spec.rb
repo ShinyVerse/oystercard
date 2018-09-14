@@ -1,70 +1,51 @@
 require 'oystercard'
 
 describe Oystercard do
-  let(:in_station) { double :station }
-  let(:out_station) { double :station }
+  let(:oystercard) { described_class.new(0, journeylog)}
+  let(:entry_station) { double('a station', name: 'Aldgate East', zone: 1) }
+  let(:exit_station) { double('another station', name: 'Bow road', zone: 2)}
+  let(:journey) { double('journey') }
+  let(:journeylog) { double('journeylog', start_tracking: entry_station, stop_tracking: exit_station )}
 
-  context 'When card is new' do
-    let(:subject) { Oystercard.new }
+ context '#top_up' do
+   it 'tops up oystercard' do
+     oystercard.top_up(2)
 
-    it 'tops up balance to passed amount' do
-      subject.top_up(10)
-      expect(subject::balance).to eq 10
-    end
-
-    it 'Raises an error when user has insufficient funds on card' do
-      expect { subject.touch_in(in_station) }.to raise_error "Insufficient funds"
-    end
-
-  end
-
-  context 'When card has money on it' do
-    let(:subject) { Oystercard.new(50) }
-    let(:journey) { Journey.new }
-    before(:each) do
-      subject.touch_in(in_station)
-      allow(journey).to receive(:calculate_fare).and_return 1
-    end
-
-    it 'raises error if attempting to top_up beyond capped limit' do
-      message = "Unable to top up beyond #{Oystercard::BALANCE_CAP}. You currently have: £#{subject.balance}"
-      expect{ subject.top_up(50) }.to raise_error(message)
-    end
-
-    xit 'changes @entry_station to in_station when touch_in called' do
-
-      expect(subject::entry_station).to eq in_station
-    end
-
-    it 'changes balance when charge is made' do
-
-      expect{ subject.touch_out(out_station) }.to change{subject.balance}.by (-1)
-    end
-
-    it 'remembers the entry station' do
-      expect(subject.entry_station).to eq(in_station)
-    end
-
-    it 'logs journey in @card_history ' do
-      subject.touch_out(out_station)
-      fare = journey.calculate_fare
-      expect(subject.card_history).to include({'entry' => in_station, 'out' => out_station, 'price' => fare})
-    end
- end
-
- context 'When card is in use' do
-   let(:subject) { Oystercard.new(50) }
-
-   before(:each) do
-      subject.touch_in(in_station)
+     expect(oystercard.balance).to eq(2)
    end
 
-    it 'changes @entry_station to false when touch_out is called' do
-      subject.touch_out(out_station)
+   it "Raises an error when card is full" do
+     max_balance = Oystercard::MAX_BALANCE
+     oystercard.top_up(max_balance)
 
-      expect(subject::entry_station).to eq nil
-    end
+     expect { oystercard.top_up 1 }.to raise_error("Card has reached its £#{max_balance} limit!")
+   end
+ end
 
+context '#touch_in' do
+  it 'raises error when not enough money' do
+    fare = Oystercard::FARE
+    balance = Oystercard::BALANCE
+
+    expect { oystercard.touch_in(entry_station) }.to raise_error("Not enough money on card! Your balance is £#{balance}")
   end
 
+  it 'returns station on touch in' do
+   oystercard.top_up(10)
+   oystercard.touch_in(entry_station)
+
+   expect(journeylog.start_tracking(entry_station)).to eq entry_station
+ end
+end
+
+ context '#touch_out' do
+   it 'should deduct fare upon touch out' do
+     oystercard.top_up(10)
+     oystercard.touch_in(entry_station)
+     allow(journeylog).to receive(:process_fare) {1}
+     allow(journeylog).to receive(:store_journey)
+
+     expect{oystercard.touch_out(exit_station)}.to change{oystercard.balance}.by(-1 )
+   end
+ end
 end
