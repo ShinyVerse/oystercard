@@ -1,4 +1,3 @@
-
 require 'station'
 
 describe Station do

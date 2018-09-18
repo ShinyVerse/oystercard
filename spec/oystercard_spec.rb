@@ -36,6 +36,13 @@ context '#touch_in' do
 
    expect(journeylog.start_tracking(entry_station)).to eq entry_station
  end
+
+  it 'raises error if already in' do
+   oystercard.top_up(10)
+   oystercard.touch_in(entry_station)
+
+   expect { oystercard.touch_in(exit_station) }.to raise_error('Already touched in!')
+  end
 end
 
  context '#touch_out' do
@@ -46,6 +53,16 @@ end
      allow(journeylog).to receive(:store_journey)
 
      expect{oystercard.touch_out(exit_station)}.to change{oystercard.balance}.by(-1 )
+   end
+
+   it 'should raise an error when already touched out' do
+     oystercard.top_up(10)
+     oystercard.touch_in(entry_station)
+     allow(journeylog).to receive(:process_fare) {1}
+     allow(journeylog).to receive(:store_journey)
+     oystercard.touch_out(exit_station)
+
+     expect{oystercard.touch_out(exit_station)}.to raise_error "Already touched out!"
    end
  end
 end
